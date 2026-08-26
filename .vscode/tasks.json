@@ -3,6 +3,8 @@
   "version": "2.0.0",
   "tasks": [
     {
+      // Background task: the dev server keeps running, so it needs begin/end patterns
+      // for VS Code to know when a rebuild starts and finishes.
       "type": "npm",
       "script": "start",
       "isBackground": true,
@@ -21,22 +23,10 @@
       }
     },
     {
+      // vitest runs to completion, so this is a normal (non-background) task.
       "type": "npm",
       "script": "test",
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "typescript",
-        "pattern": "$tsc",
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": {
-            "regexp": "Changes detected"
-          },
-          "endsPattern": {
-            "regexp": "bundle generation (complete|failed)"
-          }
-        }
-      }
+      "problemMatcher": ["$tsc"]
     }
   ]
 }
