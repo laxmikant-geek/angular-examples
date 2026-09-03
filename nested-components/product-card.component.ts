@@ -1,46 +1,53 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, booleanAttribute, input, model, output } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Product } from './product.model';
 
 /**
  * Child (nested) component.
- * Receives a Product via the required signal input `product`,
- * and notifies the parent via the signal output `added`.
+ * - input.required<Product>() : data passed DOWN (mandatory)
+ * - input(...) with transform  : optional, coerced input
+ * - output<Product>()          : event sent UP
+ * - model<number>()            : two-way [(quantity)] binding
+ * - <ng-content>               : content projection from the parent
  */
 @Component({
   selector: 'app-product-card',
   standalone: true,
   imports: [CurrencyPipe],
   template: `
-    <div class="card">
+    <article class="card" [class.featured]="featured()">
+      <ng-content select="[badge]"></ng-content>
       <h3>{{ product().name }}</h3>
-      <p>{{ finalPrice() | currency }}</p>
-      @if (product().inStock) {
-        <button (click)="addToCart()">Add to cart</button>
-      } @else {
-        <span class="muted">Out of stock</span>
-      }
-    </div>
+      <p>{{ product().price | currency }}</p>
+
+      <div class="qty">
+        <button (click)="dec()">-</button>
+        <span>{{ quantity() }}</span>
+        <button (click)="inc()">+</button>
+      </div>
+
+      <button class="add" (click)="addToCart.emit(product())">
+        Add to cart
+      </button>
+    </article>
   `,
-  styles: [`
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
-    .muted { color: #999; }
-  `],
 })
 export class ProductCardComponent {
-  // Required signal input: the parent MUST bind a product.
+  // pass data DOWN
   product = input.required<Product>();
+  featured = input(false, { transform: booleanAttribute });
 
-  // Signal output: raised when the user adds the product.
-  added = output<Product>();
+  // two-way binding: the child owns edits to quantity
+  quantity = model<number>(1);
 
-  // Derived value that recomputes when the input changes.
-  finalPrice = computed(() => {
-    const p = this.product();
-    return p.price > 100 ? p.price * 0.9 : p.price;
-  });
+  // send events UP
+  addToCart = output<Product>();
 
-  addToCart(): void {
-    this.added.emit(this.product());
+  inc(): void {
+    this.quantity.update(q => q + 1);
+  }
+
+  dec(): void {
+    this.quantity.update(q => Math.max(1, q - 1));
   }
 }
